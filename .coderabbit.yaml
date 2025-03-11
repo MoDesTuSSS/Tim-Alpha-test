@@ -1,0 +1,123 @@
+version: 1.0
+
+# Основные настройки
+settings:
+  language: php
+  framework: symfony
+  max_file_size: 1000000  # 1MB
+  max_line_length: 120
+  tab_width: 4
+  use_spaces: true
+
+# Правила для PHP
+php:
+  # Проверка синтаксиса
+  syntax_check: true
+  
+  # Проверка типов
+  type_check: true
+  
+  # Проверка именования
+  naming:
+    classes: "^[A-Z][a-zA-Z0-9]*$"
+    methods: "^[a-z][a-zA-Z0-9]*$"
+    properties: "^[a-z][a-zA-Z0-9]*$"
+    variables: "^[a-z][a-zA-Z0-9]*$"
+    constants: "^[A-Z][A-Z0-9_]*$"
+  
+  # Проверка документации
+  documentation:
+    require_class_doc: true
+    require_method_doc: true
+    require_property_doc: true
+    
+  # Проверка безопасности
+  security:
+    check_sql_injection: true
+    check_xss: true
+    check_csrf: true
+    check_file_upload: true
+    
+  # Проверка производительности
+  performance:
+    check_database_queries: true
+    check_memory_usage: true
+    check_loop_complexity: true
+
+# Правила для тестов
+tests:
+  require_test_coverage: 80
+  require_unit_tests: true
+  require_integration_tests: true
+  
+  naming:
+    test_classes: "^[A-Z][a-zA-Z0-9]*Test$"
+    test_methods: "^test[A-Z][a-zA-Z0-9]*$"
+
+# Игнорируемые файлы и директории
+ignore:
+  - vendor/
+  - var/
+  - bin/
+  - tests/
+  - config/
+  - public/
+  - templates/
+  - migrations/
+  - "*.cache"
+  - "*.log"
+  - "*.sql"
+  - "*.csv"
+  - "*.yaml"
+  - "*.yml"
+  - "*.json"
+  - "*.md"
+  - "*.dist"
+  - "*.lock"
+  - "*.env*"
+  - "*.git*"
+  - "*.docker*"
+  - "*.postman*"
+
+# Правила для Git
+git:
+  commit_message:
+    pattern: "^(feat|fix|docs|style|refactor|test|chore)(\([a-z-]+\))?: .+$"
+    max_length: 72
+  branch_naming:
+    pattern: "^(feature|bugfix|hotfix|release)/[a-z0-9-]+$"
+
+# Правила для Docker
+docker:
+  require_dockerfile: true
+  require_docker_compose: true
+  check_security_scan: true
+
+# Правила для API
+api:
+  require_openapi: true
+  require_api_versioning: true
+  require_rate_limiting: true
+  require_authentication: true
+  require_validation: true
+
+# Правила для базы данных
+database:
+  require_migrations: true
+  require_indexes: true
+  require_foreign_keys: true
+  check_sql_optimization: true
+
+# Правила для логирования
+logging:
+  require_structured_logging: true
+  require_error_tracking: true
+  require_performance_monitoring: true
+
+# Правила для документации
+documentation:
+  require_readme: true
+  require_api_docs: true
+  require_changelog: true
+  require_contributing: true
+  require_license: true 

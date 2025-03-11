@@ -1,0 +1,82 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> symfony/phpunit-bridge ###
+.phpunit.result.cache
+/phpunit.xml
+###< symfony/phpunit-bridge ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+.phpunit.result.cache
+###< phpunit/phpunit ###
+
+###> IDE files ###
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+###< IDE files ###
+
+###> OS files ###
+.DS_Store
+Thumbs.db
+###< OS files ###
+
+###> Project specific ###
+/public/uploads/
+/var/backup/*
+!/var/backup/.gitkeep
+/var/cache/*
+!/var/cache/.gitkeep
+/var/log/*
+!/var/log/.gitkeep
+/var/sessions/*
+!/var/sessions/.gitkeep
+###< Project specific ###
+
+###> Docker ###
+docker-compose.override.yml
+###< Docker ###
+
+###> Database ###
+*.sql
+*.sqlite
+*.sqlite3
+###< Database ###
+
+###> Logs and backups ###
+*.log
+*.bak
+*.backup
+*.swp
+*.swo
+###< Logs and backups ###
+
+###> Dependencies ###
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+.npm/
+node_modules/
+###< Dependencies ###
+
+###> Security ###
+auth.json
+*.pem
+*.key
+*.crt
+###< Security ###
+
+###> Test coverage ###
+/coverage/
+.coverage
+coverage.xml
+###< Test coverage ###
