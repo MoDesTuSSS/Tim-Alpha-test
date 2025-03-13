@@ -43,7 +43,12 @@ services:
             $twitterCallbackUrl: '%twitter_callback_url%'
             $twitterAccessToken: '%twitter_access_token%'
             $twitterAccessTokenSecret: '%twitter_access_token_secret%'
+            $requestStack: '@request_stack'
 
     App\Command\:
         resource: '../src/Command'
         tags: ['console.command']
+
+    App\Command\DatabaseRestoreCommand:
+        arguments:
+            $connection: '@doctrine.dbal.default_connection'

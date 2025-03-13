@@ -142,7 +142,9 @@ class TwitterAuthControllerTest extends TestCase
             'test_api_secret',
             'http://localhost:8080/auth/twitter/callback',
             'test_access_token',
-            'test_access_token_secret'
+            'test_access_token_secret',
+            $this->requestStack,
+            $this->createMock(\Psr\Log\LoggerInterface::class)
         );
         $this->controller->setContainer($this->container);
     }

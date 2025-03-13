@@ -10,8 +10,8 @@ services:
       APP_SECRET: your_app_secret_here
       DATABASE_URL: "mysql://symfony:symfony@database:3306/symfony?serverVersion=8.0&charset=utf8mb4"
       MAILER_DSN: "smtp://mailer:1025"
-      TWITTER_API_KEY: test_twitter_api_key
-      TWITTER_API_SECRET: test_twitter_api_secret
+      TWITTER_API_KEY: dmjB0NLLedhOMqVmx69BmtW0d
+      TWITTER_API_SECRET: Exf2e1mW4nd6Yjn5fJOdSO9EazWoldGYotqQ9gPI5wdvIDgYmu
       TWITTER_CALLBACK_URL: "http://localhost:8080/auth/twitter/callback"
     volumes:
       - .:/var/www
