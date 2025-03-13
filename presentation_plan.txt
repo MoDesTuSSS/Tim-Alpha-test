@@ -1,0 +1,42 @@
+Demo Presentation Plan
+
+1. Introduction (1 min)
+   - Project overview
+   - Tech stack: PHP 8.2, Symfony 7.2, MySQL 8.0, Docker, Twitter OAuth
+
+2. Core Features Demo (5 min)
+   a) User Management:
+   ```bash
+   # Show current users
+   curl http://localhost:8080/api/users
+   
+   # Import users from CSV
+   curl -X POST -F "file=@data.csv" http://localhost:8080/api/upload
+   ```
+
+   b) Database Operations:
+   ```bash
+   # Create backup
+   curl http://localhost:8080/api/backup
+   
+   # Restore from backup
+   curl -X POST -F "file=@backup.sql" http://localhost:8080/api/restore
+   ```
+
+   c) Twitter OAuth:
+   ```bash
+   # Start authentication
+   curl http://localhost:8080/auth/twitter
+   ```
+
+3. Testing & Security (2 min)
+   - Run tests: `docker-compose exec php bin/phpunit`
+   - Show test coverage
+   - Security features demonstration
+
+4. Q&A (2 min)
+   - Technical questions
+   - Future improvements
+   - Implementation details
+
+Total duration: 10 minutes 
