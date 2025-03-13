@@ -17,10 +17,16 @@ Demo Presentation Plan
    b) Database Operations:
    ```bash
    # Create backup
-   curl http://localhost:8080/api/backup
+   curl http://localhost:8080/api/backup -o backup.sql
+   
+   # Drop existing tables
+   docker-compose exec database mysql -u symfony -psymfony symfony -e "DROP TABLE IF EXISTS test, users;"
    
    # Restore from backup
-   curl -X POST -F "file=@backup.sql" http://localhost:8080/api/restore
+   docker-compose exec database bash -c 'mysql -u symfony -psymfony symfony < /tmp/backup.sql'
+   
+   # Verify restored data
+   curl http://localhost:8080/api/users
    ```
 
    c) Twitter OAuth:
