@@ -1,4 +1,167 @@
-# Backend Developer Assignment – User Data Management & Twitter OAuth API
+# Backend Assignment
+
+## Требования
+
+- Docker
+- Docker Compose
+- Git
+
+## Технологический стек
+
+- PHP 8.2
+- Symfony 7.2
+- MySQL 8.0
+- RabbitMQ 3.13
+- Nginx
+- Mailpit для тестирования email
+- PHPUnit для тестирования
+
+## Развертывание
+
+1. Клонируйте репозиторий:
+```bash
+git clone <repository-url>
+cd backend-assignment
+```
+
+2. Создайте файл `.env.local` на основе `.env`:
+```bash
+cp .env .env.local
+```
+
+3. Настройте переменные окружения в `.env.local`:
+```env
+APP_ENV=dev
+APP_DEBUG=1
+APP_SECRET=your_app_secret_here
+DATABASE_URL="mysql://symfony:symfony@database:3306/symfony?serverVersion=8.0&charset=utf8mb4"
+MAILER_DSN=smtp://mailer:1025
+MESSENGER_TRANSPORT_DSN=amqp://symfony:symfony@rabbitmq:5672/%2f/messages
+TWITTER_API_KEY=your_twitter_api_key
+TWITTER_API_SECRET=your_twitter_api_secret
+TWITTER_CALLBACK_URL=http://localhost:8080/auth/twitter/callback
+```
+
+4. Запустите контейнеры:
+```bash
+docker-compose up -d
+```
+
+5. Установите зависимости:
+```bash
+docker-compose exec php composer install
+```
+
+6. Выполните миграции:
+```bash
+docker-compose exec php bin/console doctrine:migrations:migrate
+```
+
+## Доступные сервисы
+
+- API: http://localhost:8080
+- RabbitMQ Management: http://localhost:15672 (guest/guest)
+- Mailpit: http://localhost:8025
+
+## API Endpoints
+
+### Управление пользователями
+
+- `GET /api/users` - Получение списка всех пользователей
+- `POST /api/users` - Создание нового пользователя
+  ```json
+  {
+    "username": "johndoe",
+    "email": "john@example.com",
+    "name": "John Doe"
+  }
+  ```
+- `GET /api/users/{id}` - Получение информации о конкретном пользователе
+
+### Twitter OAuth
+
+- `GET /auth/twitter` - Инициация процесса аутентификации через Twitter
+- `GET /auth/twitter/callback` - Обработка ответа от Twitter
+
+## Тестирование
+
+### Запуск тестов
+```bash
+docker-compose exec php bin/phpunit
+```
+
+Проект включает модульные тесты для:
+- Контроллера пользователей (UserController)
+- Контроллера Twitter аутентификации (TwitterAuthController)
+- Контроллера базы данных (DatabaseController)
+
+### Покрытие тестами
+
+Основные тестовые сценарии включают:
+- Создание пользователя
+- Получение списка пользователей
+- Получение информации о конкретном пользователе
+- Процесс аутентификации через Twitter
+- Операции с базой данных (backup/restore)
+
+## Асинхронная обработка
+
+Проект использует RabbitMQ для асинхронной обработки задач:
+- Обработка пользователей после создания
+- Отправка уведомлений по email
+- Фоновые задачи
+
+## Команды
+
+- Запуск всех сервисов:
+```bash
+docker-compose up -d
+```
+
+- Остановка всех сервисов:
+```bash
+docker-compose down
+```
+
+- Просмотр логов:
+```bash
+docker-compose logs -f
+```
+
+- Выполнение команд в PHP контейнере:
+```bash
+docker-compose exec php <command>
+```
+
+## Структура проекта
+
+```
+.
+├── docker/                 # Docker конфигурация
+│   ├── nginx/             # Конфигурация Nginx
+│   └── php/              # Dockerfile для PHP
+├── src/
+│   ├── Controller/       # Контроллеры
+│   ├── Entity/          # Сущности Doctrine
+│   ├── Message/         # Асинхронные сообщения
+│   └── Repository/      # Репозитории Doctrine
+├── tests/               # Тесты
+├── .env                # Базовые переменные окружения
+└── docker-compose.yml  # Docker Compose конфигурация
+```
+
+## Безопасность
+
+- Все конфиденциальные данные хранятся в `.env.local`
+- Используется HTTPS для production окружения
+- Реализована валидация входных данных
+- Применяются best practices Symfony Security
+
+## Мониторинг
+
+- Логи доступны через `docker-compose logs`
+- RabbitMQ Management UI для мониторинга очередей
+- Mailpit для просмотра отправленных email
 
 ## Project Overview
 This project is a Symfony-based RESTful API for user management with Twitter OAuth integration. Key features include:

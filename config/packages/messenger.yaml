@@ -1,0 +1,25 @@
+framework:
+    messenger:
+        # Уничтожаем сообщения после обработки
+        failure_transport: failed
+        
+        # Транспорты
+        transports:
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: messages
+                        type: direct
+                        default_publish_routing_key: messages
+                    queues:
+                        messages:
+                            binding_keys: ['messages']
+            failed:
+                dsn: 'doctrine://default'
+                options:
+                    table_name: 'messenger_messages_failed'
+        
+        # Маршрутизация сообщений
+        routing:
+            'App\Message\Async\ProcessUserMessage': async 

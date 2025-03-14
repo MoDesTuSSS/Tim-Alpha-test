@@ -1,6 +1,6 @@
 version: 1.0
 
-# Основные настройки
+# Main settings
 settings:
   language: php
   framework: symfony
@@ -9,15 +9,15 @@ settings:
   tab_width: 4
   use_spaces: true
 
-# Правила для PHP
+# PHP rules
 php:
-  # Проверка синтаксиса
+  # Syntax check
   syntax_check: true
   
-  # Проверка типов
+  # Type check
   type_check: true
   
-  # Проверка именования
+  # Naming check
   naming:
     classes: "^[A-Z][a-zA-Z0-9]*$"
     methods: "^[a-z][a-zA-Z0-9]*$"
@@ -25,24 +25,34 @@ php:
     variables: "^[a-z][a-zA-Z0-9]*$"
     constants: "^[A-Z][A-Z0-9_]*$"
   
-  # Проверка документации
+  # Documentation check
   documentation:
     require_class_doc: true
     require_method_doc: true
     require_property_doc: true
     
-  # Проверка безопасности
+  # Security check
   security:
     check_sql_injection: true
     check_xss: true
     check_csrf: true
     check_file_upload: true
     
-  # Проверка производительности
+  # Performance check
   performance:
     check_database_queries: true
     check_memory_usage: true
     check_loop_complexity: true
+
+# Syntax check
+# ... existing code ...
+# Type check
+# ... existing code ...
+# Naming check
+# ... existing code ...
+# Documentation check
+# ... existing code ...
+# Security check
 
 # Правила для тестов
 tests:

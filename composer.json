@@ -4,21 +4,29 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.1",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "abraham/twitteroauth": "^7.0",
+        "asmblah/php-amqp-compat": "^0.4.13",
         "doctrine/doctrine-bundle": "^2.11",
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/orm": "^2.17",
+        "symfony/amqp-messenger": "7.2.*",
         "symfony/console": "7.2.*",
+        "symfony/debug-bundle": "7.2.*",
+        "symfony/doctrine-messenger": "7.2.*",
         "symfony/dotenv": "7.2.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "7.2.*",
         "symfony/mailer": "7.2.*",
-        "symfony/runtime": "^7.2",
+        "symfony/messenger": "7.2.*",
+        "symfony/monolog-bundle": "*",
+        "symfony/runtime": "7.2.*",
         "symfony/security-bundle": "7.2.*",
+        "symfony/serializer": "7.2.*",
         "symfony/twig-bundle": "7.2.*",
+        "symfony/validator": "7.2.*",
         "symfony/yaml": "7.2.*"
     },
     "require-dev": {
@@ -26,7 +34,8 @@
         "symfony/browser-kit": "7.2.*",
         "symfony/css-selector": "7.2.*",
         "symfony/maker-bundle": "^1.52",
-        "symfony/phpunit-bridge": "^7.2"
+        "symfony/phpunit-bridge": "^7.2",
+        "symfony/web-profiler-bundle": "7.2.*"
     },
     "config": {
         "allow-plugins": {
@@ -47,6 +56,7 @@
         }
     },
     "replace": {
+        "paragonie/random_compat": "2.0.*",
         "symfony/polyfill-ctype": "*",
         "symfony/polyfill-iconv": "*",
         "symfony/polyfill-php72": "*",

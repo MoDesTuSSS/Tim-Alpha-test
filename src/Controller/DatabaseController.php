@@ -17,19 +17,32 @@ use Symfony\Component\HttpKernel\KernelInterface;
 class DatabaseController extends AbstractController
 {
     private KernelInterface $kernel;
+    private ?Application $application = null;
 
     public function __construct(KernelInterface $kernel)
     {
         $this->kernel = $kernel;
     }
 
+    public function setApplication(Application $application): void
+    {
+        $this->application = $application;
+    }
+
+    private function getApplication(): Application
+    {
+        if ($this->application === null) {
+            $this->application = new Application($this->kernel);
+            $this->application->setAutoExit(false);
+        }
+        return $this->application;
+    }
+
     #[Route('/backup', name: 'api_backup_database', methods: ['GET'])]
     public function backup(): Response
     {
         try {
-            $application = new Application($this->kernel);
-            $application->setAutoExit(false);
-
+            $application = $this->getApplication();
             $input = new ArrayInput([
                 'command' => 'app:database:backup',
             ]);
@@ -76,9 +89,7 @@ class DatabaseController extends AbstractController
         }
 
         try {
-            $application = new Application($this->kernel);
-            $application->setAutoExit(false);
-
+            $application = $this->getApplication();
             $input = new ArrayInput([
                 'command' => 'app:database:restore',
                 'file' => $file->getPathname(),

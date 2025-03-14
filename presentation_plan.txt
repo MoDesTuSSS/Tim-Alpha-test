@@ -23,7 +23,7 @@ Demo Presentation Plan
    docker-compose exec database mysql -u symfony -psymfony symfony -e "DROP TABLE IF EXISTS test, users;"
    
    # Restore from backup
-   docker-compose exec database bash -c 'mysql -u symfony -psymfony symfony < /tmp/backup.sql'
+   docker-compose exec database bash -c 'mysql -u symfony -p symfony symfony < backup.sql'
    
    # Verify restored data
    curl http://localhost:8080/api/users

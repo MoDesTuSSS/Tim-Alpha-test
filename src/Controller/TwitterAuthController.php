@@ -98,7 +98,7 @@ final class TwitterAuthController extends AbstractController
                 'trace' => $e->getTraceAsString()
             ]);
             
-            throw new TwitterAuthException('Ошибка аутентификации Twitter', 0, $e);
+            throw new TwitterAuthException('Twitter authentication error', 0, $e);
         }
     }
 
@@ -143,7 +143,7 @@ final class TwitterAuthController extends AbstractController
                 'trace' => $e->getTraceAsString()
             ]);
             
-            throw new TwitterAuthException('Ошибка обработки callback: ' . $e->getMessage());
+            throw new TwitterAuthException('Callback processing error: ' . $e->getMessage());
         }
     }
 
@@ -179,7 +179,7 @@ final class TwitterAuthController extends AbstractController
 
         if ($connection->getLastHttpCode() !== 200) {
             throw new TwitterAuthException(sprintf(
-                'Ошибка получения request token. HTTP код: %d, Ответ: %s',
+                'Error getting request token. HTTP code: %d, Response: %s',
                 $connection->getLastHttpCode(),
                 json_encode($connection->getLastBody())
             ));
@@ -227,9 +227,9 @@ final class TwitterAuthController extends AbstractController
         return new Response(
             '<form method="POST" class="twitter-pin-form">
                 <div class="form-group">
-                    <label for="pin">Введите PIN-код, полученный от Twitter:</label><br>
+                    <label for="pin">Enter the PIN code received from Twitter:</label><br>
                     <input type="text" id="pin" name="pin" class="form-control" required><br>
-                    <button type="submit" class="btn btn-primary">Подтвердить</button>
+                    <button type="submit" class="btn btn-primary">Confirm</button>
                 </div>
             </form>',
             Response::HTTP_OK
@@ -247,7 +247,7 @@ final class TwitterAuthController extends AbstractController
         $tokenSecret = $this->session->get(self::SESSION_OAUTH_TOKEN_SECRET);
 
         if (!$token || !$tokenSecret) {
-            throw new TwitterAuthException('OAuth токены не найдены в сессии');
+            throw new TwitterAuthException('OAuth tokens not found in session');
         }
 
         return [
@@ -268,7 +268,7 @@ final class TwitterAuthController extends AbstractController
         ]);
 
         if ($connection->getLastHttpCode() !== 200) {
-            throw new TwitterAuthException('Не удалось получить access token');
+            throw new TwitterAuthException('Failed to get access token');
         }
 
         return $accessToken;
@@ -289,7 +289,7 @@ final class TwitterAuthController extends AbstractController
         $twitterUser = $connection->get('account/verify_credentials');
 
         if ($connection->getLastHttpCode() !== 200) {
-            throw new TwitterAuthException('Не удалось верифицировать учетные данные Twitter');
+            throw new TwitterAuthException('Failed to verify Twitter credentials');
         }
 
         return $twitterUser;
@@ -300,12 +300,13 @@ final class TwitterAuthController extends AbstractController
      */
     private function updateOrCreateUser(object $twitterUser, array $accessToken): User
     {
-        $user = $this->entityManager->getRepository(User::class)
-            ->findOneBy(['twitterId' => $twitterUser->id]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy([
+            'twitterId' => $twitterUser->id_str
+        ]);
 
         if (!$user) {
             $user = new User();
-            $user->setTwitterId($twitterUser->id);
+            $user->setTwitterId($twitterUser->id_str);
             $user->setUsername($twitterUser->screen_name);
             $user->setName($twitterUser->name);
             $user->setRoles(['ROLE_USER']);

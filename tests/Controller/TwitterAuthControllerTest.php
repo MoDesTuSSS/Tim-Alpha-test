@@ -4,16 +4,19 @@ namespace App\Tests\Controller;
 
 use App\Controller\TwitterAuthController;
 use App\Entity\User;
+use App\Exception\TwitterAuthException;
 use App\Tests\Mock\TwitterOAuthMock;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\DependencyInjection\Container;
+use Psr\Log\LoggerInterface;
 
 class TwitterAuthControllerTest extends TestCase
 {
@@ -23,6 +26,7 @@ class TwitterAuthControllerTest extends TestCase
     private RequestStack $requestStack;
     private EntityRepository $userRepository;
     private Container $container;
+    private LoggerInterface $logger;
 
     protected function setUp(): void
     {
@@ -129,6 +133,9 @@ class TwitterAuthControllerTest extends TestCase
         $request->setSession($this->session);
         $this->requestStack->push($request);
         
+        // Создаем логгер
+        $this->logger = $this->createMock(LoggerInterface::class);
+        
         // Создаем контейнер и добавляем в него сервисы
         $this->container = new Container();
         $this->container->set('session', $this->session);
@@ -144,13 +151,22 @@ class TwitterAuthControllerTest extends TestCase
             'test_access_token',
             'test_access_token_secret',
             $this->requestStack,
-            $this->createMock(\Psr\Log\LoggerInterface::class)
+            $this->logger
         );
         $this->controller->setContainer($this->container);
     }
 
-    public function testConnect()
+    public function testConnect(): void
     {
+        // Настраиваем ожидания для логгера
+        $this->logger->expects($this->exactly(3))
+            ->method('debug')
+            ->withConsecutive(
+                ['Starting Twitter OAuth process', $this->arrayHasKey('api_key')],
+                ['Request token response', $this->arrayHasKey('response')],
+                ['Generated authorization URL', $this->arrayHasKey('url')]
+            );
+
         $response = $this->controller->connect();
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
@@ -161,14 +177,26 @@ class TwitterAuthControllerTest extends TestCase
         $this->assertEquals('test_token_secret', $this->session->get('oauth_token_secret'));
     }
 
-    public function testCallback()
+    public function testCallbackWithPinForm(): void
+    {
+        // Создаем запрос без oauth_verifier
+        $request = new Request();
+        $request->setSession($this->session);
+
+        $response = $this->controller->callback($request);
+
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertStringContainsString('twitter-pin-form', $response->getContent());
+    }
+
+    public function testCallbackWithPin(): void
     {
         // Подготавливаем сессию
         $this->session->set('oauth_token', 'test_token');
         $this->session->set('oauth_token_secret', 'test_token_secret');
 
-        // Создаем Request
-        $request = new Request(['oauth_token' => 'test_token', 'oauth_verifier' => 'test_verifier']);
+        // Создаем запрос с PIN-кодом
+        $request = new Request([], ['pin' => '123456']);
         $request->setSession($this->session);
 
         // Устанавливаем, что пользователь не найден
@@ -185,19 +213,20 @@ class TwitterAuthControllerTest extends TestCase
         $this->assertEquals('12345', $user->getTwitterId());
         $this->assertEquals('test_user', $user->getUsername());
         $this->assertEquals('Test User', $user->getName());
+        $this->assertEquals(['ROLE_USER'], $user->getRoles());
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertStringContainsString('yourapp://auth?token=test_access_token', $response->getTargetUrl());
     }
 
-    public function testCallbackWithExistingUser()
+    public function testCallbackWithExistingUser(): void
     {
         // Подготавливаем сессию
         $this->session->set('oauth_token', 'test_token');
         $this->session->set('oauth_token_secret', 'test_token_secret');
 
-        // Создаем Request
-        $request = new Request(['oauth_token' => 'test_token', 'oauth_verifier' => 'test_verifier']);
+        // Создаем запрос с oauth_verifier
+        $request = new Request(['oauth_verifier' => 'test_verifier']);
         $request->setSession($this->session);
 
         // Создаем существующего пользователя
@@ -223,5 +252,17 @@ class TwitterAuthControllerTest extends TestCase
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertStringContainsString('yourapp://auth?token=test_access_token', $response->getTargetUrl());
+    }
+
+    public function testCallbackWithMissingTokens(): void
+    {
+        // Создаем запрос без токенов в сессии
+        $request = new Request(['oauth_verifier' => 'test_verifier']);
+        $request->setSession($this->session);
+
+        $this->expectException(TwitterAuthException::class);
+        $this->expectExceptionMessage('OAuth токены не найдены в сессии');
+
+        $this->controller->callback($request);
     }
 } 

@@ -4,19 +4,14 @@ services:
   php:
     build:
       context: .
-      target: app_php_dev
-    environment:
-      APP_ENV: dev
-      APP_SECRET: your_app_secret_here
-      DATABASE_URL: "mysql://symfony:symfony@database:3306/symfony?serverVersion=8.0&charset=utf8mb4"
-      MAILER_DSN: "smtp://mailer:1025"
-      TWITTER_API_KEY: dmjB0NLLedhOMqVmx69BmtW0d
-      TWITTER_API_SECRET: Exf2e1mW4nd6Yjn5fJOdSO9EazWoldGYotqQ9gPI5wdvIDgYmu
-      TWITTER_CALLBACK_URL: "http://localhost:8080/auth/twitter/callback"
+      dockerfile: docker/php/Dockerfile
     volumes:
       - .:/var/www
+    networks:
+      - app-network
     depends_on:
       - database
+      - rabbitmq
       - mailer
 
   nginx:
@@ -25,27 +20,61 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - app-network
     depends_on:
       - php
 
   database:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: symfony
       MYSQL_USER: symfony
       MYSQL_PASSWORD: symfony
+      MYSQL_ROOT_PASSWORD: symfony
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
-      - db_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: symfony
+      RABBITMQ_DEFAULT_PASS: symfony
+    networks:
+      - app-network
 
   mailer:
-    image: schickling/mailcatcher
+    image: mailhog/mailhog
     ports:
       - "1025:1025"
-      - "1080:1080"
+      - "8025:8025"
+    networks:
+      - app-network
+
+  consumer:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    command: php bin/console messenger:consume async
+    volumes:
+      - .:/var/www
+    networks:
+      - app-network
+    depends_on:
+      - php
+      - rabbitmq
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
-  db_data: 
+  mysql_data: 
