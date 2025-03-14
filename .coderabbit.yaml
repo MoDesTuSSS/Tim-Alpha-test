@@ -54,7 +54,7 @@ php:
 # ... existing code ...
 # Security check
 
-# Правила для тестов
+# Test rules
 tests:
   require_test_coverage: 80
   require_unit_tests: true
@@ -64,7 +64,7 @@ tests:
     test_classes: "^[A-Z][a-zA-Z0-9]*Test$"
     test_methods: "^test[A-Z][a-zA-Z0-9]*$"
 
-# Игнорируемые файлы и директории
+# Ignored files and directories
 ignore:
   - vendor/
   - var/
@@ -89,7 +89,7 @@ ignore:
   - "*.docker*"
   - "*.postman*"
 
-# Правила для Git
+# Git rules
 git:
   commit_message:
     pattern: "^(feat|fix|docs|style|refactor|test|chore)(\([a-z-]+\))?: .+$"
@@ -97,13 +97,13 @@ git:
   branch_naming:
     pattern: "^(feature|bugfix|hotfix|release)/[a-z0-9-]+$"
 
-# Правила для Docker
+# Docker rules
 docker:
   require_dockerfile: true
   require_docker_compose: true
   check_security_scan: true
 
-# Правила для API
+# API rules
 api:
   require_openapi: true
   require_api_versioning: true
@@ -111,20 +111,20 @@ api:
   require_authentication: true
   require_validation: true
 
-# Правила для базы данных
+# Database rules
 database:
   require_migrations: true
   require_indexes: true
   require_foreign_keys: true
   check_sql_optimization: true
 
-# Правила для логирования
+# Logging rules
 logging:
   require_structured_logging: true
   require_error_tracking: true
   require_performance_monitoring: true
 
-# Правила для документации
+# Documentation rules
 documentation:
   require_readme: true
   require_api_docs: true

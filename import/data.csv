@@ -1,0 +1,6 @@
+name,email,username,address,role
+John Doe,john@example.com,johndoe,"123 Main St, City",USER
+Jane Smith,jane@example.com,janesmith,"456 Park Ave, Town",ADMIN
+Bob Wilson,bob@example.com,bobwilson,"789 Oak Rd, Village",USER
+Alice Brown,alice@example.com,aliceb,"321 Pine St, County",USER
+Admin User,admin@example.com,adminuser,"100 Admin St, City",ADMIN

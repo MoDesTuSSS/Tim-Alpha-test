@@ -1,6 +1,0 @@
-name,email,username,address,role
-John Doe,john@example.com,johndoe,"123 Main St, City",ROLE_USER
-Jane Smith,jane@example.com,janesmith,"456 Park Ave, Town",ROLE_ADMIN
-Bob Wilson,bob@example.com,bobwilson,"789 Oak Rd, Village",ROLE_USER
-Alice Brown,alice@example.com,aliceb,"321 Pine St, County",ROLE_USER
-Admin User,admin@example.com,adminuser,"100 Admin St, City",ROLE_ADMIN

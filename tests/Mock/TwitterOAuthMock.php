@@ -12,17 +12,17 @@ class TwitterOAuthMock extends TwitterOAuth
 
     public function __construct()
     {
-        // Пустой конструктор для тестов
+        // Empty constructor for tests
     }
 
     public function setApiVersion(string $version): void
     {
-        // Ничего не делаем в тестах
+        // Do nothing in tests
     }
 
     public function setTimeouts(int $connectTimeout, int $timeout): void
     {
-        // Ничего не делаем в тестах
+        // Do nothing in tests
     }
 
     public function oauth($path, array $parameters = []): array

@@ -13,74 +13,85 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DatabaseControllerTest extends TestCase
 {
     private KernelInterface $kernel;
     private DatabaseController $controller;
-    private string $backupDir;
+    private string $tempDir;
 
     protected function setUp(): void
     {
+        // Create temporary directory for test files
+        $this->tempDir = sys_get_temp_dir() . '/backup_test_' . uniqid();
+        mkdir($this->tempDir);
+        
         $this->kernel = $this->createMock(KernelInterface::class);
         $this->controller = new DatabaseController($this->kernel);
         
-        // Создаем временную директорию для тестовых файлов
-        $this->backupDir = sys_get_temp_dir() . '/backup_test_' . uniqid();
-        mkdir($this->backupDir, 0777, true);
-        
         $this->kernel->expects($this->any())
             ->method('getProjectDir')
-            ->willReturn($this->backupDir);
+            ->willReturn($this->tempDir);
     }
 
     protected function tearDown(): void
     {
-        // Очищаем временную директорию
-        if (is_dir($this->backupDir)) {
-            $backupPath = $this->backupDir . '/var/backup';
-            if (is_dir($backupPath)) {
-                array_map('unlink', glob($backupPath . '/*.*'));
-                rmdir($backupPath);
-            }
-            if (is_dir($this->backupDir . '/var')) {
-                rmdir($this->backupDir . '/var');
-            }
-            rmdir($this->backupDir);
+        // Clean up temporary directory
+        if (is_dir($this->tempDir)) {
+            $this->removeDirectory($this->tempDir);
         }
+        
+        parent::tearDown();
     }
 
-    public function testBackupSuccess(): void
+    private function removeDirectory(string $dir): void
     {
-        // Создаем тестовый файл резервной копии
-        $backupFile = $this->backupDir . '/var/backup/backup_20240320_123456.sql';
-        mkdir(dirname($backupFile), 0777, true);
-        file_put_contents($backupFile, 'CREATE TABLE test (id INT);');
+        if (!is_dir($dir)) {
+            return;
+        }
 
-        // Настраиваем мок приложения
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            if (is_dir($path)) {
+                $this->removeDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+        rmdir($dir);
+    }
+
+    public function testBackup(): void
+    {
+        // Create test backup file
+        $backupContent = "-- Test backup content";
+        $backupDir = $this->tempDir . '/var/backup';
+        mkdir($backupDir, 0777, true);
+        $backupFile = $backupDir . '/backup_' . date('Ymd_His') . '.sql';
+        file_put_contents($backupFile, $backupContent);
+
+        // Configure application mock
         $application = $this->createMock(Application::class);
         $application->expects($this->once())
             ->method('run')
             ->willReturn(0);
 
-        // Настраиваем мок ядра
-        $this->kernel->expects($this->any())
-            ->method('getProjectDir')
-            ->willReturn($this->backupDir);
-
-        // Внедряем мок приложения
+        // Inject application mock
         $this->controller->setApplication($application);
 
-        // Выполняем тест
+        // Execute test
         $response = $this->controller->backup();
 
-        // Проверяем, что это BinaryFileResponse
+        // Verify response
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\BinaryFileResponse', $response);
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
         
-        // Проверяем имя файла в заголовке Content-Disposition
+        // Check filename in Content-Disposition header
         $disposition = $response->headers->get('Content-Disposition');
-        $this->assertStringContainsString('backup_20240320_123456.sql', $disposition);
+        $this->assertStringContainsString('backup_', $disposition);
+        $this->assertStringContainsString('.sql', $disposition);
         $this->assertStringContainsString('attachment', $disposition);
     }
 
@@ -91,11 +102,6 @@ class DatabaseControllerTest extends TestCase
         $application->expects($this->once())
             ->method('run')
             ->willReturn(1);
-
-        // Настраиваем мок ядра
-        $this->kernel->expects($this->any())
-            ->method('getProjectDir')
-            ->willReturn($this->backupDir);
 
         // Внедряем мок приложения
         $this->controller->setApplication($application);

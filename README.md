@@ -1,167 +1,212 @@
 # Backend Assignment
 
-## Требования
+A Symfony 7.2 application with asynchronous message processing via RabbitMQ.
+
+## Requirements
 
 - Docker
 - Docker Compose
-- Git
+- PHP 8.1 or higher
 
-## Технологический стек
+## Installation
+
+1. Clone the repository
+2. Create `.env` file from `.env.example`
+3. Start containers:
+```bash
+docker-compose up -d
+```
+4. Install dependencies:
+```bash
+docker-compose exec php composer install
+```
+5. Run database migrations:
+```bash
+docker-compose exec php php bin/console doctrine:migrations:migrate
+```
+
+## Available Services
+
+- API: http://localhost:8080
+- RabbitMQ Management: http://localhost:15672
+- MailHog: http://localhost:8025
+
+## API Endpoints
+
+### Users
+
+#### Get Users List
+```http
+GET /api/users
+```
+Generates a list of users asynchronously and returns an export ID.
+
+Response:
+```json
+{
+    "message": "Users list generation started",
+    "export_id": "uuid",
+    "status_url": "/api/users/export/{export_id}",
+    "download_url": "/api/users/export/{export_id}/download"
+}
+```
+
+#### Check Export Status
+```http
+GET /api/users/export/{export_id}
+```
+Check the status of the users list export.
+
+Response:
+```json
+{
+    "status": "completed|processing",
+    "message": "Export is ready|Export is being generated",
+    "download_url": "/api/users/export/{export_id}/download"
+}
+```
+
+#### Download Export
+```http
+GET /api/users/export/{export_id}/download
+```
+Download the generated users list JSON file.
+
+#### Import Users
+```http
+POST /api/users/import
+Content-Type: multipart/form-data
+
+file: data.csv
+```
+Import users from a CSV file. The file should contain the following columns:
+- email
+- firstName
+- lastName
+- roles (comma-separated)
+
+Response:
+```json
+{
+    "message": "Import started",
+    "import_id": "uuid",
+    "status_url": "/api/users/import/{import_id}"
+}
+```
+
+#### Check Import Status
+```http
+GET /api/users/import/{import_id}
+```
+Check the status of the user import process.
+
+Response:
+```json
+{
+    "status": "completed|processing",
+    "message": "Import completed|Import is being processed",
+    "processed": 10,
+    "skipped": 2
+}
+```
+
+### Database Management
+
+#### Backup Database
+```http
+POST /api/database/backup
+```
+Create a backup of the database.
+
+Response:
+```json
+{
+    "message": "Database backup started",
+    "backup_id": "uuid",
+    "status_url": "/api/database/backup/{backup_id}"
+}
+```
+
+#### Restore Database
+```http
+POST /api/database/restore
+Content-Type: multipart/form-data
+
+file: backup.sql
+```
+Restore database from a backup file.
+
+Response:
+```json
+{
+    "message": "Database restore started",
+    "restore_id": "uuid",
+    "status_url": "/api/database/restore/{restore_id}"
+}
+```
+
+### Twitter Authentication
+
+#### Twitter Login
+```http
+GET /api/twitter/login
+```
+Initiate Twitter OAuth login process.
+
+Response:
+```json
+{
+    "url": "https://api.twitter.com/oauth/authorize?oauth_token=..."
+}
+```
+
+#### Twitter Callback
+```http
+GET /api/twitter/callback
+```
+Handle Twitter OAuth callback.
+
+Response:
+```json
+{
+    "message": "Twitter authentication successful",
+    "user": {
+        "id": "twitter_id",
+        "username": "twitter_username",
+        "email": "user@example.com"
+    }
+}
+```
+
+## Monitoring
+
+### Check Container Logs
+```bash
+docker-compose logs -f [service_name]
+```
+
+### Check Import/Export Status
+```bash
+curl http://localhost:8080/api/users/import/{import_id}
+curl http://localhost:8080/api/users/export/{export_id}
+```
+
+## Testing
+
+Run PHPUnit tests:
+```bash
+docker-compose exec php php bin/phpunit
+```
+
+## Technology Stack
 
 - PHP 8.2
 - Symfony 7.2
 - MySQL 8.0
 - RabbitMQ 3.13
 - Nginx
-- Mailpit для тестирования email
-- PHPUnit для тестирования
-
-## Развертывание
-
-1. Клонируйте репозиторий:
-```bash
-git clone <repository-url>
-cd backend-assignment
-```
-
-2. Создайте файл `.env.local` на основе `.env`:
-```bash
-cp .env .env.local
-```
-
-3. Настройте переменные окружения в `.env.local`:
-```env
-APP_ENV=dev
-APP_DEBUG=1
-APP_SECRET=your_app_secret_here
-DATABASE_URL="mysql://symfony:symfony@database:3306/symfony?serverVersion=8.0&charset=utf8mb4"
-MAILER_DSN=smtp://mailer:1025
-MESSENGER_TRANSPORT_DSN=amqp://symfony:symfony@rabbitmq:5672/%2f/messages
-TWITTER_API_KEY=your_twitter_api_key
-TWITTER_API_SECRET=your_twitter_api_secret
-TWITTER_CALLBACK_URL=http://localhost:8080/auth/twitter/callback
-```
-
-4. Запустите контейнеры:
-```bash
-docker-compose up -d
-```
-
-5. Установите зависимости:
-```bash
-docker-compose exec php composer install
-```
-
-6. Выполните миграции:
-```bash
-docker-compose exec php bin/console doctrine:migrations:migrate
-```
-
-## Доступные сервисы
-
-- API: http://localhost:8080
-- RabbitMQ Management: http://localhost:15672 (guest/guest)
-- Mailpit: http://localhost:8025
-
-## API Endpoints
-
-### Управление пользователями
-
-- `GET /api/users` - Получение списка всех пользователей
-- `POST /api/users` - Создание нового пользователя
-  ```json
-  {
-    "username": "johndoe",
-    "email": "john@example.com",
-    "name": "John Doe"
-  }
-  ```
-- `GET /api/users/{id}` - Получение информации о конкретном пользователе
-
-### Twitter OAuth
-
-- `GET /auth/twitter` - Инициация процесса аутентификации через Twitter
-- `GET /auth/twitter/callback` - Обработка ответа от Twitter
-
-## Тестирование
-
-### Запуск тестов
-```bash
-docker-compose exec php bin/phpunit
-```
-
-Проект включает модульные тесты для:
-- Контроллера пользователей (UserController)
-- Контроллера Twitter аутентификации (TwitterAuthController)
-- Контроллера базы данных (DatabaseController)
-
-### Покрытие тестами
-
-Основные тестовые сценарии включают:
-- Создание пользователя
-- Получение списка пользователей
-- Получение информации о конкретном пользователе
-- Процесс аутентификации через Twitter
-- Операции с базой данных (backup/restore)
-
-## Асинхронная обработка
-
-Проект использует RabbitMQ для асинхронной обработки задач:
-- Обработка пользователей после создания
-- Отправка уведомлений по email
-- Фоновые задачи
-
-## Команды
-
-- Запуск всех сервисов:
-```bash
-docker-compose up -d
-```
-
-- Остановка всех сервисов:
-```bash
-docker-compose down
-```
-
-- Просмотр логов:
-```bash
-docker-compose logs -f
-```
-
-- Выполнение команд в PHP контейнере:
-```bash
-docker-compose exec php <command>
-```
-
-## Структура проекта
-
-```
-.
-├── docker/                 # Docker конфигурация
-│   ├── nginx/             # Конфигурация Nginx
-│   └── php/              # Dockerfile для PHP
-├── src/
-│   ├── Controller/       # Контроллеры
-│   ├── Entity/          # Сущности Doctrine
-│   ├── Message/         # Асинхронные сообщения
-│   └── Repository/      # Репозитории Doctrine
-├── tests/               # Тесты
-├── .env                # Базовые переменные окружения
-└── docker-compose.yml  # Docker Compose конфигурация
-```
-
-## Безопасность
-
-- Все конфиденциальные данные хранятся в `.env.local`
-- Используется HTTPS для production окружения
-- Реализована валидация входных данных
-- Применяются best practices Symfony Security
-
-## Мониторинг
-
-- Логи доступны через `docker-compose logs`
-- RabbitMQ Management UI для мониторинга очередей
-- Mailpit для просмотра отправленных email
+- Mailpit for email testing
+- PHPUnit for testing
 
 ## Project Overview
 This project is a Symfony-based RESTful API for user management with Twitter OAuth integration. Key features include:
@@ -169,15 +214,6 @@ This project is a Symfony-based RESTful API for user management with Twitter OAu
 - Twitter OAuth authentication
 - Database backup and restore functionality
 - Asynchronous email notifications
-
-## Technology Stack
-- PHP 8.2
-- Symfony 7.2
-- MySQL 8.0
-- Docker & Docker Compose
-- Nginx
-- MailCatcher for email testing
-- PHPUnit for testing
 
 ## Installation and Setup
 

@@ -30,7 +30,7 @@ class TwitterAuthControllerTest extends TestCase
 
     protected function setUp(): void
     {
-        // Создаем Stub для репозитория
+        // Create Repository Stub
         $this->userRepository = new class extends EntityRepository {
             private ?User $user = null;
             
@@ -47,7 +47,7 @@ class TwitterAuthControllerTest extends TestCase
             }
         };
         
-        // Создаем Stub для EntityManager
+        // Create EntityManager Stub
         $this->entityManager = new class($this->userRepository) implements EntityManagerInterface {
             private EntityRepository $repository;
             private array $persistedEntities = [];
@@ -69,7 +69,7 @@ class TwitterAuthControllerTest extends TestCase
             
             public function flush(): void
             {
-                // Ничего не делаем в тестах
+                // Do nothing in tests
             }
             
             public function getPersistedEntities(): array
@@ -77,7 +77,7 @@ class TwitterAuthControllerTest extends TestCase
                 return $this->persistedEntities;
             }
             
-            // Остальные методы интерфейса
+            // Other interface methods
             public function getCache() { }
             public function getConnection() { }
             public function getExpressionBuilder() { }
@@ -124,25 +124,25 @@ class TwitterAuthControllerTest extends TestCase
             }
         };
         
-        // Создаем реальную сессию с мок хранилищем
+        // Create real session with mock storage
         $this->session = new Session(new MockArraySessionStorage());
         
-        // Создаем RequestStack и добавляем в него Request с сессией
+        // Create RequestStack and add Request with session
         $this->requestStack = new RequestStack();
         $request = new Request();
         $request->setSession($this->session);
         $this->requestStack->push($request);
         
-        // Создаем логгер
+        // Create logger
         $this->logger = $this->createMock(LoggerInterface::class);
         
-        // Создаем контейнер и добавляем в него сервисы
+        // Create container and add services
         $this->container = new Container();
         $this->container->set('session', $this->session);
         $this->container->set('request_stack', $this->requestStack);
         $this->container->set('test.twitter_oauth', new TwitterOAuthMock());
         
-        // Создаем контроллер
+        // Create controller
         $this->controller = new TwitterAuthController(
             $this->entityManager,
             'test_api_key',
@@ -158,7 +158,7 @@ class TwitterAuthControllerTest extends TestCase
 
     public function testConnect(): void
     {
-        // Настраиваем ожидания для логгера
+        // Configure logger expectations
         $this->logger->expects($this->exactly(3))
             ->method('debug')
             ->withConsecutive(
@@ -172,14 +172,14 @@ class TwitterAuthControllerTest extends TestCase
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertStringContainsString('oauth/authorize', $response->getTargetUrl());
         
-        // Проверяем, что токены сохранены в сессии
+        // Check that tokens are saved in session
         $this->assertEquals('test_token', $this->session->get('oauth_token'));
         $this->assertEquals('test_token_secret', $this->session->get('oauth_token_secret'));
     }
 
     public function testCallbackWithPinForm(): void
     {
-        // Создаем запрос без oauth_verifier
+        // Create request without oauth_verifier
         $request = new Request();
         $request->setSession($this->session);
 
@@ -191,20 +191,20 @@ class TwitterAuthControllerTest extends TestCase
 
     public function testCallbackWithPin(): void
     {
-        // Подготавливаем сессию
+        // Prepare session
         $this->session->set('oauth_token', 'test_token');
         $this->session->set('oauth_token_secret', 'test_token_secret');
 
-        // Создаем запрос с PIN-кодом
+        // Create request with PIN code
         $request = new Request([], ['pin' => '123456']);
         $request->setSession($this->session);
 
-        // Устанавливаем, что пользователь не найден
+        // Set that user is not found
         $this->userRepository->setUser(null);
 
         $response = $this->controller->callback($request);
 
-        // Проверяем, что был создан новый пользователь
+        // Check that new user was created
         $persistedEntities = $this->entityManager->getPersistedEntities();
         $this->assertCount(1, $persistedEntities);
         $user = $persistedEntities[0];
@@ -221,26 +221,26 @@ class TwitterAuthControllerTest extends TestCase
 
     public function testCallbackWithExistingUser(): void
     {
-        // Подготавливаем сессию
+        // Prepare session
         $this->session->set('oauth_token', 'test_token');
         $this->session->set('oauth_token_secret', 'test_token_secret');
 
-        // Создаем запрос с oauth_verifier
+        // Create request with oauth_verifier
         $request = new Request(['oauth_verifier' => 'test_verifier']);
         $request->setSession($this->session);
 
-        // Создаем существующего пользователя
+        // Create existing user
         $existingUser = new User();
         $existingUser->setTwitterId('12345');
         $existingUser->setUsername('existing_user');
         $existingUser->setName('Existing User');
 
-        // Устанавливаем существующего пользователя
+        // Set existing user
         $this->userRepository->setUser($existingUser);
 
         $response = $this->controller->callback($request);
 
-        // Проверяем, что пользователь был обновлен
+        // Check that user was updated
         $persistedEntities = $this->entityManager->getPersistedEntities();
         $this->assertCount(1, $persistedEntities);
         $user = $persistedEntities[0];
@@ -256,12 +256,12 @@ class TwitterAuthControllerTest extends TestCase
 
     public function testCallbackWithMissingTokens(): void
     {
-        // Создаем запрос без токенов в сессии
+        $this->expectException(TwitterAuthException::class);
+        $this->expectExceptionMessage('OAuth tokens not found in session');
+
+        // Create request without tokens in session
         $request = new Request(['oauth_verifier' => 'test_verifier']);
         $request->setSession($this->session);
-
-        $this->expectException(TwitterAuthException::class);
-        $this->expectExceptionMessage('OAuth токены не найдены в сессии');
 
         $this->controller->callback($request);
     }

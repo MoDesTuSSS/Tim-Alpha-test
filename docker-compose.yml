@@ -7,24 +7,41 @@ services:
       dockerfile: docker/php/Dockerfile
     volumes:
       - .:/var/www
+      - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro
     networks:
       - app-network
     depends_on:
-      - database
-      - rabbitmq
-      - mailer
+      rabbitmq:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+      mailer:
+        condition: service_healthy
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "php-fpm", "-t"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   nginx:
     image: nginx:alpine
     ports:
       - "8080:80"
     volumes:
-      - .:/var/www
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - .:/var/www:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
     networks:
       - app-network
     depends_on:
-      - php
+      php:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   database:
     image: mysql:8.0
@@ -37,8 +54,15 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "symfony", "-psymfony"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: --default-authentication-plugin=mysql_native_password
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -46,10 +70,17 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: symfony
-      RABBITMQ_DEFAULT_PASS: symfony
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   mailer:
     image: mailhog/mailhog
@@ -58,23 +89,40 @@ services:
       - "8025:8025"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "1025"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   consumer:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-    command: php bin/console messenger:consume async
+    command: sh -c "sleep 10 && php bin/console messenger:consume async -vv --time-limit=3600"
     volumes:
       - .:/var/www
+      - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+    env_file:
+      - .env
     networks:
       - app-network
     depends_on:
-      - php
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      php:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "php", "-v"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  mysql_data: 
+  mysql_data:
+  rabbitmq_data: 

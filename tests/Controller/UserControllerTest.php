@@ -19,70 +19,58 @@ class UserControllerTest extends TestCase
     private SerializerInterface $serializer;
     private MessageBusInterface $messageBus;
     private UserController $controller;
+    private string $projectDir;
 
     protected function setUp(): void
     {
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->serializer = $this->createMock(SerializerInterface::class);
         $this->messageBus = $this->createMock(MessageBusInterface::class);
+        $this->projectDir = sys_get_temp_dir();
+        
         $this->controller = new UserController(
             $this->entityManager,
             $this->serializer,
-            $this->messageBus
+            $this->messageBus,
+            $this->projectDir
         );
     }
 
     public function testList(): void
     {
-        // Создаем тестовых пользователей
-        $users = [
-            $this->createTestUser('John Doe', 'john@example.com'),
-            $this->createTestUser('Jane Smith', 'jane@example.com')
-        ];
+        // Create test request
+        $request = new Request();
 
-        // Настраиваем моки
-        $repository = $this->createMock(\Doctrine\ORM\EntityRepository::class);
-        $repository->expects($this->once())
-            ->method('findAll')
-            ->willReturn($users);
+        // Configure mocks
+        $this->messageBus->expects($this->once())
+            ->method('dispatch')
+            ->with($this->isInstanceOf(\App\Message\Async\GenerateUsersListMessage::class))
+            ->willReturn(new Envelope(new \App\Message\Async\GenerateUsersListMessage('test-id', null, [])));
 
-        $this->entityManager->expects($this->once())
-            ->method('getRepository')
-            ->with(User::class)
-            ->willReturn($repository);
+        // Execute test
+        $response = $this->controller->list($request);
 
-        $this->serializer->expects($this->once())
-            ->method('serialize')
-            ->with($users, 'json', ['groups' => 'user:read'])
-            ->willReturn(json_encode([
-                ['name' => 'John Doe', 'email' => 'john@example.com'],
-                ['name' => 'Jane Smith', 'email' => 'jane@example.com']
-            ]));
-
-        // Выполняем тест
-        $response = $this->controller->list();
-
-        // Проверяем результат
-        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        // Verify result
+        $this->assertEquals(Response::HTTP_ACCEPTED, $response->getStatusCode());
         $content = json_decode($response->getContent(), true);
-        $this->assertCount(2, $content);
-        $this->assertEquals('John Doe', $content[0]['name']);
-        $this->assertEquals('jane@example.com', $content[1]['email']);
+        $this->assertArrayHasKey('export_id', $content);
+        $this->assertArrayHasKey('status_url', $content);
+        $this->assertArrayHasKey('download_url', $content);
     }
 
     public function testCreate(): void
     {
-        // Создаем тестовые данные
+        // Create test data
         $userData = [
             'username' => 'johndoe',
             'email' => 'john@example.com',
             'name' => 'John Doe'
         ];
 
-        // Создаем запрос
+        // Create request
         $request = new Request([], [], [], [], [], [], json_encode($userData));
 
-        // Настраиваем моки
+        // Configure mocks
         $this->entityManager->expects($this->once())
             ->method('persist')
             ->with($this->callback(function ($user) use ($userData) {
@@ -91,7 +79,7 @@ class UserControllerTest extends TestCase
                 $this->assertEquals($userData['email'], $user->getEmail());
                 $this->assertEquals($userData['name'], $user->getName());
                 
-                // Устанавливаем ID после проверки
+                // Set ID after verification
                 $reflectionClass = new \ReflectionClass(User::class);
                 $property = $reflectionClass->getProperty('id');
                 $property->setAccessible(true);
@@ -113,10 +101,10 @@ class UserControllerTest extends TestCase
             ->method('serialize')
             ->willReturn(json_encode($userData));
 
-        // Выполняем тест
+        // Execute test
         $response = $this->controller->create($request);
 
-        // Проверяем результат
+        // Verify result
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
         $content = json_decode($response->getContent(), true);
         $this->assertEquals($userData['username'], $content['username']);
@@ -125,10 +113,10 @@ class UserControllerTest extends TestCase
 
     public function testShow(): void
     {
-        // Создаем тестового пользователя
+        // Create test user
         $user = $this->createTestUser('John Doe', 'john@example.com');
 
-        // Настраиваем моки
+        // Configure mocks
         $this->serializer->expects($this->once())
             ->method('serialize')
             ->with($user, 'json', ['groups' => 'user:read'])
@@ -137,10 +125,10 @@ class UserControllerTest extends TestCase
                 'email' => 'john@example.com'
             ]));
 
-        // Выполняем тест
+        // Execute test
         $response = $this->controller->show($user);
 
-        // Проверяем результат
+        // Verify result
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
         $content = json_decode($response->getContent(), true);
         $this->assertEquals('John Doe', $content['name']);

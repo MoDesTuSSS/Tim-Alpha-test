@@ -9,6 +9,7 @@ parameters:
     twitter_callback_url: '%env(TWITTER_CALLBACK_URL)%'
     twitter_access_token: '%env(TWITTER_ACCESS_TOKEN)%'
     twitter_access_token_secret: '%env(TWITTER_ACCESS_TOKEN_SECRET)%'
+    project_dir: '%kernel.project_dir%'
 
 services:
     # default configuration for services in *this* file
@@ -44,6 +45,26 @@ services:
             $twitterAccessToken: '%twitter_access_token%'
             $twitterAccessTokenSecret: '%twitter_access_token_secret%'
             $requestStack: '@request_stack'
+
+    App\Controller\UserController:
+        class: App\Controller\UserController
+        public: true
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $serializer: '@serializer'
+            $messageBus: '@messenger.default_bus'
+            $projectDir: '%project_dir%'
+
+    App\MessageHandler\Async\GenerateUsersListMessageHandler:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\MessageHandler\Async\ImportUsersMessageHandler:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\MessageHandler\Async\ProcessUserMessageHandler:
+        tags: ['messenger.message_handler']
 
     App\Command\:
         resource: '../src/Command'
