@@ -80,3 +80,6 @@ auth.json
 .coverage
 coverage.xml
 ###< Test coverage ###
+
+presentation_plan.md
+presentation_plan.txt
